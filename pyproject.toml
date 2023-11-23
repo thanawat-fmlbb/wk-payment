@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "payment"
+version = "0.1.0"
+description = "Payment service for FMLBB"
+authors = ["Nawat Ngerncham <67263644+nngerncham@users.noreply.github.com>"]
+license = "MIT"
+packages = [
+    { include = "src", from = "." },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sqlmodel = "^0.0.12"
+celery = "^5.3.6"
+python-dotenv = "^1.0.0"
+psycopg2-binary = "^2.9.9"
+redis = "^5.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
