@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "payment"
+version = "0.1.0"
+description = "Payment service for FMLBB"
+authors = ["Nawat Ngerncham <67263644+nngerncham@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
