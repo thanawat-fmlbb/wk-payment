@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 from sqlmodel import create_engine, SQLModel
-import models
+
+from src.database import models
 
 load_dotenv()
 DATABASE_HOST = os.environ.get("DATABASE_HOST", "localhost:5433")

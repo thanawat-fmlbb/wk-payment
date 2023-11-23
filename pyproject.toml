@@ -6,7 +6,7 @@ authors = ["Nawat Ngerncham <67263644+nngerncham@users.noreply.github.com>"]
 license = "MIT"
 readme = "readme.md"
 packages = [
-    { include = "src", from = "." },
+    { include = "src/*", from = "." },
 ]
 
 [tool.poetry.dependencies]
@@ -15,6 +15,7 @@ sqlmodel = "^0.0.12"
 celery = "^5.3.6"
 python-dotenv = "^1.0.0"
 psycopg2-binary = "^2.9.9"
+redis = "^5.0.1"
 
 
 [build-system]
