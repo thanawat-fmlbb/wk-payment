@@ -1,7 +1,7 @@
 import os
 
 from celery import Celery
-from src.database import create_db_and_tables
+from src.database.engine import create_db_and_tables
 
 create_db_and_tables()
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
