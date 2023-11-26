@@ -11,9 +11,11 @@ class UserMoney(SQLModel, table=True):
 
 
 class PaymentInfo(SQLModel, table=True):
+    # represents every update to user's money
     __tablename__ = "payment_info"
 
     id: int = Field(default=None, primary_key=True)
     main_id: int  # doesn't need to be unique since we need to update the same "payment" at some point
+    user_id: int
     transaction_amount: int
     is_valid: bool
