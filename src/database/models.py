@@ -15,7 +15,7 @@ class PaymentInfo(SQLModel, table=True):
     __tablename__ = "payment_info"
 
     id: int = Field(default=None, primary_key=True)
-    main_id: int  # doesn't need to be unique since we need to update the same "payment" at some point
-    user_id: int
+    main_id: int = Field(unique=True)
+    user_id: int = Field(foreign_key="user_money.user_id")
     transaction_amount: int
     is_valid: bool
