@@ -18,7 +18,7 @@ def create_payment(**kwargs) -> bool:
     user_id = kwargs.get('user_id', None)
     item_price = kwargs.get('item_price', None)
     quantity = kwargs.get('quantity', None)
-
+    
     engine = get_engine()
     success = True
     with Session(engine) as session:
@@ -28,12 +28,13 @@ def create_payment(**kwargs) -> bool:
             if user is None:
                 user = UserMoney(user_id=user_id)
                 session.add(user)
+                session.commit()
 
             if user.money < amount:
                 payment = PaymentInfo(main_id=main_id, user_id=user_id, transaction_amount=amount, is_valid=False)
                 session.add(payment)
                 session.commit()
-                return False
+                raise ValueError("Insufficient funds")
 
             user.money -= amount
             user.on_hold_money += amount
@@ -42,27 +43,33 @@ def create_payment(**kwargs) -> bool:
             session.add(payment)
 
             session.commit()
-            return True
         except SQLAlchemyError as e:
             payment = PaymentInfo(main_id=main_id, user_id=user_id, transaction_amount=amount, is_valid=False)
             session.add(payment)
             session.commit()
-            return False
+            kwargs["error"] = str(e)
+        except ValueError as e:
+            success = False
+            kwargs["error"] = "insufficient_funds"
         except SoftTimeLimitExceeded:
             success = False
             kwargs["error"] = "timeout"
+        except Exception as e:
+            success = False
+            kwargs["error"] = str(e)
         
         result_object = {
             "main_id": main_id,
             "success": success,
-            "service_name": "create_order",
+            "service_name": "payment",
             "payload": kwargs,
         }
         result_collector.send_task(
             RESULT_TASK_NAME,
             kwargs=result_object,
-            task_id=main_id
+            task_id=str(main_id)
         )
+        return success
 
 
 @app.task(name='wk-payment.tasks.rollback')
@@ -85,26 +92,31 @@ def rollback_payment(**kwargs) -> bool:
             # commit
             session.commit()
     except SQLAlchemyError as e:
-        print(e)
-        return False
+        kwargs["error"] = str(e)
     
     result_object = {
         "main_id": main_id,
         "success": False, # this is for triggering the rollback on the backend
-        "service_name": "create_order",
+        "service_name": "payment",
         "payload": kwargs,
     }
     result_collector.send_task(
         RESULT_TASK_NAME,
         kwargs=result_object,
-        task_id=main_id
+        task_id=str(main_id)
     )
-    return True
+    return False
 
 
-@app.task
-def update_success(main_id: int) -> bool:
+@app.task(
+    soft_time_limit=30, 
+    time_limit=60,
+    name='wk-payment.tasks.confirm_payment'
+)
+def update_success(**kwargs) -> bool:
+    main_id = kwargs.get('main_id', None)
     engine = get_engine()
+    success = True
     try:
         with Session(engine) as session:
             # gets corresponding payment info and user
@@ -118,10 +130,25 @@ def update_success(main_id: int) -> bool:
 
             # commit
             session.commit()
-            return True
-    except SQLAlchemyError as e:
-        print(e)
-        return False
+    except SoftTimeLimitExceeded:
+        success = False
+        kwargs["error"] = "timeout"
+    except Exception as e:
+        success = False
+        kwargs["error"] = str(e)
+    
+    result_object = {
+        "main_id": main_id,
+        "success": success,
+        "service_name": "payment_final",
+        "payload": kwargs,
+    }
+    result_collector.send_task(
+        RESULT_TASK_NAME,
+        kwargs=result_object,
+        task_id=str(main_id)
+    )
+    return success
 
 
 if __name__ == '__main__':
