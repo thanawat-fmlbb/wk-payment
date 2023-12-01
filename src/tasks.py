@@ -1,14 +1,26 @@
 from sqlmodel import Session, select
 from sqlalchemy.exc import SQLAlchemyError
+from celery.exceptions import SoftTimeLimitExceeded
 
-from src import app
+from src import app, result_collector
 from src.database.engine import get_engine
 from src.database.models import UserMoney, PaymentInfo
 
+RESULT_TASK_NAME = "wk-irs.tasks.send_result"
 
-@app.task
-def create_payment(main_id, user_id: int, item_price: int, quantity: int) -> bool:
+@app.task(
+    soft_time_limit=30, 
+    time_limit=60,
+    name='wk-payment.tasks.create_payment'
+)
+def create_payment(**kwargs) -> bool:
+    main_id = kwargs.get('main_id', None)
+    user_id = kwargs.get('user_id', None)
+    item_price = kwargs.get('item_price', None)
+    quantity = kwargs.get('quantity', None)
+
     engine = get_engine()
+    success = True
     with Session(engine) as session:
         amount = item_price * quantity
         try:
@@ -36,10 +48,26 @@ def create_payment(main_id, user_id: int, item_price: int, quantity: int) -> boo
             session.add(payment)
             session.commit()
             return False
+        except SoftTimeLimitExceeded:
+            success = False
+            kwargs["error"] = "timeout"
+        
+        result_object = {
+            "main_id": main_id,
+            "success": success,
+            "service_name": "create_order",
+            "payload": kwargs,
+        }
+        result_collector.send_task(
+            RESULT_TASK_NAME,
+            kwargs=result_object,
+            task_id=main_id
+        )
 
 
-@app.task
-def rollback_payment(main_id, reason) -> bool:
+@app.task(name='wk-payment.tasks.rollback')
+def rollback_payment(**kwargs) -> bool:
+    main_id = kwargs.get('main_id', None)
     engine = get_engine()
     try:
         with Session(engine) as session:
@@ -56,10 +84,22 @@ def rollback_payment(main_id, reason) -> bool:
 
             # commit
             session.commit()
-            return True
     except SQLAlchemyError as e:
         print(e)
         return False
+    
+    result_object = {
+        "main_id": main_id,
+        "success": False, # this is for triggering the rollback on the backend
+        "service_name": "create_order",
+        "payload": kwargs,
+    }
+    result_collector.send_task(
+        RESULT_TASK_NAME,
+        kwargs=result_object,
+        task_id=main_id
+    )
+    return True
 
 
 @app.task

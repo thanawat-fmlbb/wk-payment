@@ -10,3 +10,8 @@ app = Celery("payment_service",
              broker=f"redis://{REDIS_HOST}:{REDIS_PORT}/2",
              backend=f"redis://{REDIS_HOST}:{REDIS_PORT}/3",
              broker_connection_retry_on_startup=True)
+
+result_collector = Celery("payment_service",
+             broker=f"redis://{REDIS_HOST}:{REDIS_PORT}/4",
+             backend=f"redis://{REDIS_HOST}:{REDIS_PORT}/4",
+             broker_connection_retry_on_startup=True)
