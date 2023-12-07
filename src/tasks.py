@@ -16,14 +16,14 @@ RESULT_TASK_NAME = "wk-irs.tasks.send_result"
 def create_payment(**kwargs) -> bool:
     main_id = kwargs.get('main_id', None)
     user_id = kwargs.get('user_id', None)
-    item_price = kwargs.get('item_price', None)
-    quantity = kwargs.get('quantity', None)
+    item_price = float(kwargs.get('item_price', None))
+    quantity = int(kwargs.get('quantity', None))
     
     engine = get_engine()
     success = True
     with Session(engine) as session:
-        amount = item_price * quantity
         try:
+            amount = item_price * quantity
             user = session.get(UserMoney, user_id)
             if user is None:
                 user = UserMoney(user_id=user_id)
@@ -149,6 +149,39 @@ def update_success(**kwargs) -> bool:
         task_id=str(main_id)
     )
     return success
+
+@app.task(
+    name='wk-payment.tasks.setup'
+)
+def db_setup():
+    # get items from UserMoney table that has id 1, 2, 3
+    engine = get_engine()
+    with Session(engine) as session:
+        try:
+            user = session.get(UserMoney, 1)
+            if user is None:
+                user = UserMoney(user_id=1)
+            user.money = 999999
+            session.add(user)
+            session.commit()
+
+            user = session.get(UserMoney, 2)
+            if user is None:
+                user = UserMoney(user_id=2)
+            user.money = 0
+            session.add(user)
+            session.commit()
+
+            user = session.get(UserMoney, 3)
+            if user is None:
+                user = UserMoney(user_id=3)
+                session.add(user)
+                session.commit()
+            return True
+        except Exception as e:
+            print(str(e))
+            return False
+
 
 
 if __name__ == '__main__':
