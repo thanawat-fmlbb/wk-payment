@@ -13,4 +13,4 @@ RUN poetry install --only main
 RUN poetry run opentelemetry-bootstrap --action=install
 
 # run the application
-CMD ["poetry", "run", "opentelemetry-instrument", "celery", "-A", "src.app", "worker", "-l", "INFO"]
+CMD ["poetry", "run", "opentelemetry-instrument", "celery", "-A", "src.tasks.app", "worker", "-l", "INFO"]
