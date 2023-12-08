@@ -629,6 +629,26 @@ setuptools = ">=16.0"
 wrapt = ">=1.0.0,<2.0.0"
 
 [[package]]
+name = "opentelemetry-instrumentation-celery"
+version = "0.38b0"
+description = "OpenTelemetry Celery Instrumentation"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "opentelemetry_instrumentation_celery-0.38b0-py3-none-any.whl", hash = "sha256:16283e6627486c39d165957da7f10f254ffd4750f736f41fd74a8f0c7d5ae055"},
+    {file = "opentelemetry_instrumentation_celery-0.38b0.tar.gz", hash = "sha256:ef0c7d64865dd67615ee6f2f2f81cc127de1649c05dcc18e6d64496183739a4c"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.38b0"
+opentelemetry-semantic-conventions = "0.38b0"
+
+[package.extras]
+instruments = ["celery (>=4.0,<6.0)"]
+test = ["opentelemetry-instrumentation-celery[instruments]", "opentelemetry-test-utils (==0.38b0)", "pytest"]
+
+[[package]]
 name = "opentelemetry-proto"
 version = "1.17.0"
 description = "OpenTelemetry Python Proto"
@@ -1187,4 +1207,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "7f4d235c4824110df09a0545e78c939079e85423c7ce486dcf7a605e0d556495"
+content-hash = "8bbd9f64079bb81b5472989811b00a4a7e457765d6c358c0613cab907aa72cb7"
